@@ -1,0 +1,34 @@
+# Render.com Deployment Configuration (Docker)
+# Alternative deployment using Docker for better compatibility
+# 
+# Instructions:
+# 1. Rename this file to render.yaml (backup the old one)
+# 2. Push to your GitHub repository
+# 3. Render will use Docker instead of native Python
+#
+# This solves pydantic build issues by using pre-built Docker image
+
+services:
+  - type: web
+    name: pykv-server
+    env: docker
+    region: oregon
+    plan: free
+    
+    # Docker will handle the build
+    dockerfilePath: ./Dockerfile
+    
+    # Environment Variables
+    envVars:
+      - key: STORE_CAPACITY
+        value: 1000
+      - key: COMPACTION_INTERVAL
+        value: 300
+      - key: CLEANUP_INTERVAL
+        value: 60
+    
+    # Health Check
+    healthCheckPath: /health
+    
+    # Auto-deploy on git push
+    autoDeploy: true

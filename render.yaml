@@ -14,9 +14,12 @@ services:
   - type: web
     name: pykv-server
     env: python
+    runtime: python
     region: oregon  # Change to: oregon, frankfurt, singapore, ohio
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    buildCommand: |
+      pip install --upgrade pip
+      pip install --only-binary=:all: -r requirements.txt || pip install -r requirements.txt
     startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     
     # Environment Variables

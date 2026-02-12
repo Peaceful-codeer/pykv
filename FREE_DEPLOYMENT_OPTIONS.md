@@ -424,3 +424,100 @@ const PYKV_URL = "https://your-app.onrender.com";
 ```
 
 No backend needed! 🚀
+
+
+---
+
+## 🔧 Common Deployment Issues & Solutions
+
+### 1. Pydantic Build Errors (Render, Railway)
+
+**Symptom:** Build fails with Rust/Cargo errors when installing pydantic
+
+**Fix:**
+```bash
+# Add runtime.txt to your project root
+echo "python-3.11.7" > runtime.txt
+
+# Update requirements.txt to use compatible versions
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.6.0
+```
+
+**Why:** Newer Python versions or incompatible pydantic versions may not have pre-built wheels, requiring Rust compilation which fails on read-only filesystems.
+
+### 2. Port Configuration
+
+**Symptom:** Service starts but shows as unhealthy
+
+**Fix:** Ensure your start command uses the platform's PORT variable:
+```bash
+# Render/Railway/Fly.io
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+# Heroku (same)
+web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+### 3. Free Tier Limitations
+
+**Render Free Tier:**
+- Spins down after 15 min inactivity
+- First request after sleep takes 30-60 seconds
+- 750 hours/month free
+
+**Railway Free Tier:**
+- $5 credit/month
+- No automatic sleep
+- Better for consistent uptime
+
+**Fly.io Free Tier:**
+- 3 shared VMs
+- 160GB bandwidth
+- Auto-scales to zero
+
+### 4. Memory Issues
+
+**Symptom:** Service crashes or restarts frequently
+
+**Fix:**
+```yaml
+# In render.yaml, add:
+envVars:
+  - key: STORE_CAPACITY
+    value: 500  # Reduce from default 1000
+```
+
+### 5. CORS Issues
+
+**Symptom:** Frontend can't connect, CORS errors in browser
+
+**Fix:** PyKV has CORS enabled by default. Ensure:
+- Using HTTPS URL (not HTTP)
+- Correct deployment URL
+- No typos in API calls
+
+### 6. Build Timeout
+
+**Symptom:** Build exceeds time limit
+
+**Fix:**
+```yaml
+# Optimize build command
+buildCommand: pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+```
+
+---
+
+## 📊 Platform Comparison Summary
+
+| Feature | Render | Railway | Fly.io | PythonAnywhere |
+|---------|--------|---------|--------|----------------|
+| Setup Difficulty | ⭐ Easy | ⭐ Easy | ⭐⭐ Medium | ⭐⭐ Medium |
+| Free Tier | 750h/mo | $5 credit | 3 VMs | Limited |
+| Auto-sleep | Yes (15min) | No | Yes | N/A |
+| Best For | Simple deploys | Active services | Global edge | Python-only |
+| Build Issues | Rare | Rare | Rare | Manual setup |
+
+**Recommendation:** Start with Render for simplicity, switch to Railway if you need no-sleep behavior.
