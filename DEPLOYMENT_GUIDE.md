@@ -581,3 +581,86 @@ fetch(`${PYKV_URL}/set`, {
 4. Share URL and code examples with users
 5. Users connect from their websites/apps
 6. Done! 🎉
+
+
+---
+
+## 🔧 Troubleshooting Deployment Issues
+
+### Issue 1: Pydantic/Rust Build Errors on Render
+
+**Error Message:**
+```
+error: failed to create directory `/usr/local/cargo/registry/cache/...`
+Caused by: Read-only file system (os error 30)
+💥 maturin failed
+```
+
+**Solution:**
+This happens when pydantic-core tries to compile from source. Use pre-built wheels:
+
+1. Ensure you have `runtime.txt` with:
+   ```
+   python-3.11.7
+   ```
+
+2. Update `render.yaml` build command:
+   ```yaml
+   buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+   ```
+
+3. Use compatible package versions in `requirements.txt`:
+   ```
+   fastapi==0.109.0
+   uvicorn[standard]==0.27.0
+   pydantic==2.6.0
+   ```
+
+### Issue 2: Port Binding Errors
+
+**Error:** `Address already in use`
+
+**Solution:**
+Ensure your app uses the `$PORT` environment variable:
+```python
+# In your start command
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+### Issue 3: CORS Errors from Frontend
+
+**Error:** `Access-Control-Allow-Origin` blocked
+
+**Solution:**
+PyKV has CORS enabled by default. If issues persist, check your deployment URL is correct and using HTTPS.
+
+### Issue 4: Health Check Failing
+
+**Error:** Service keeps restarting
+
+**Solution:**
+1. Verify `/health` endpoint works locally
+2. Check logs: `render logs` or platform-specific command
+3. Ensure dependencies installed correctly
+
+### Issue 5: Out of Memory
+
+**Error:** `MemoryError` or service crashes
+
+**Solution:**
+1. Reduce `STORE_CAPACITY` in environment variables
+2. Upgrade to paid tier with more RAM
+3. Implement regular compaction
+
+### Getting Help
+
+1. Check deployment logs on your platform
+2. Test locally first: `python -m uvicorn app.main:app`
+3. Verify all files committed to git
+4. Check platform status page for outages
+
+**Platform-Specific Logs:**
+- Render: Dashboard → Logs tab
+- Heroku: `heroku logs --tail`
+- Railway: Dashboard → Deployments → Logs
+- Fly.io: `fly logs`
