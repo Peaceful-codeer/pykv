@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyKV Example - Simple Website</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .config {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #dc382d;
+        }
+
+        .config label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .config input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-save {
+            background: #dc382d;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #c02f25;
+            transform: translateY(-2px);
+        }
+
+        .btn-load {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .result {
+            background: #1e293b;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status.connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info {
+            background: #e0e7ff;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #3730a3;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PyKV Example Website</h1>
+        <p class="subtitle">This website uses PyKV for data storage - no backend needed!</p>
+
+        <div class="config">
+            <label>PyKV Server URL:</label>
+            <input type="text" id="serverUrl" value="http://localhost:8000" placeholder="https://your-pykv-server.herokuapp.com">
+            <small style="color: #666; display: block; margin-top: 0.5rem;">
+                Change this to your deployed PyKV server URL
+            </small>
+        </div>
+
+        <div id="status" class="status disconnected">Checking connection...</div>
+
+        <div class="form-group">
+            <label>Key:</label>
+            <input type="text" id="key" placeholder="user:123" value="user:123">
+        </div>
+
+        <div class="form-group">
+            <label>Value:</label>
+            <input type="text" id="value" placeholder="Enter value" value="Hello from my website!">
+        </div>
+
+        <div class="form-group">
+            <label>TTL (seconds, optional):</label>
+            <input type="number" id="ttl" placeholder="3600" value="3600">
+        </div>
+
+        <div class="button-group">
+            <button class="btn-save" onclick="saveData()">💾 Save</button>
+            <button class="btn-load" onclick="loadData()">📥 Load</button>
+            <button class="btn-delete" onclick="deleteData()">🗑️ Delete</button>
+        </div>
+
+        <div class="result" id="result">Ready! Click a button to interact with PyKV...</div>
+
+        <div class="info">
+            <strong>💡 How it works:</strong>
+            This is a simple HTML website with no backend. It connects directly to PyKV server via JavaScript fetch API. 
+            You can deploy PyKV to Heroku/AWS/DigitalOcean and change the server URL above!
+        </div>
+    </div>
+
+    <script>
+        // Get server URL from input
+        function getServerUrl() {
+            return document.getElementById('serverUrl').value.trim();
+        }
+
+        // Check connection on load
+        window.addEventListener('load', checkConnection);
+
+        async function checkConnection() {
+            const statusEl = document.getElementById('status');
+            const serverUrl = getServerUrl();
+            
+            try {
+                const response = await fetch(`${serverUrl}/health`);
+                if (response.ok) {
+                    statusEl.textContent = '✓ Connected to PyKV';
+                    statusEl.className = 'status connected';
+                } else {
+                    statusEl.textContent = '✗ Connection failed';
+                    statusEl.className = 'status disconnected';
+                }
+            } catch (error) {
+                statusEl.textContent = '✗ Cannot connect to PyKV';
+                statusEl.className = 'status disconnected';
+            }
+        }
+
+        async function saveData() {
+            const serverUrl = getServerUrl();
+            const key = document.getElementById('key').value;
+            const value = document.getElementById('value').value;
+            const ttl = document.getElementById('ttl').value;
+            const resultEl = document.getElementById('result');
+
+            if (!key || !value) {
+                resultEl.textContent = 'Error: Please enter both key and value';
+                return;
+            }
+
+            try {
+                resultEl.textContent = 'Saving...';
+                
+                const payload = { key, value };
+                if (ttl) payload.ttl = parseInt(ttl);
+
+                const response = await fetch(`${serverUrl}/set?ns=mywebsite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                resultEl.textContent = `✓ Saved successfully!\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                
+                // Check connection status
+                checkConnection();
+            } catch (error) {
+                resultEl.textContent = `✗ Error saving data:\n${error.message}\n\nMake sure PyKV server is running!`;
+            }
+        }
+
+        async function loadData() {
+            const serverUrl = getServerUrl();
+            const key = document.getElementById('key').value;
+            const resultEl = document.getElementById('result');
+
+            if (!key) {
+                resultEl.textContent = 'Error: Please enter a key';
+                return;
+            }
+
+            try {
+                resultEl.textContent = 'Loading...';
+                
+                const response = await fetch(`${serverUrl}/get/${encodeURIComponent(key)}?ns=mywebsite`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('value').value = data.value;
+                    resultEl.textContent = `✓ Loaded successfully!\n\nKey: ${data.key}\nValue: ${data.value}\nNamespace: ${data.namespace || 'default'}`;
+                } else if (response.status === 404) {
+                    resultEl.textContent = `✗ Key '${key}' not found\n\nIt may have expired or never been saved.`;
+                } else {
+                    resultEl.textContent = `✗ Error: ${response.status} ${response.statusText}`;
+                }
+                
+                // Check connection status
+                checkConnection();
+            } catch (error) {
+                resultEl.textContent = `✗ Error loading data:\n${error.message}\n\nMake sure PyKV server is running!`;
+            }
+        }
+
+        async function deleteData() {
+            const serverUrl = getServerUrl();
+            const key = document.getElementById('key').value;
+            const resultEl = document.getElementById('result');
+
+            if (!key) {
+                resultEl.textContent = 'Error: Please enter a key';
+                return;
+            }
+
+            try {
+                resultEl.textContent = 'Deleting...';
+                
+                const response = await fetch(`${serverUrl}/delete/${encodeURIComponent(key)}?ns=mywebsite`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultEl.textContent = `✓ Deleted successfully!\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                    document.getElementById('value').value = '';
+                } else if (response.status === 404) {
+                    resultEl.textContent = `✗ Key '${key}' not found\n\nIt may have already been deleted or expired.`;
+                } else {
+                    resultEl.textContent = `✗ Error: ${response.status} ${response.statusText}`;
+                }
+                
+                // Check connection status
+                checkConnection();
+            } catch (error) {
+                resultEl.textContent = `✗ Error deleting data:\n${error.message}\n\nMake sure PyKV server is running!`;
+            }
+        }
+
+        // Update connection status when server URL changes
+        document.getElementById('serverUrl').addEventListener('change', checkConnection);
+    </script>
+</body>
+</html>

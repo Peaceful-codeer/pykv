@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyKV - Production Key-Value Store</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <h1>PyKV</h1>
+                <span class="version">v2.0</span>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+                <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-tab="operations">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <line x1="9" y1="3" x2="9" y2="21"/>
+                    </svg>
+                    Operations
+                </a>
+                <a href="#" class="nav-item" data-tab="namespaces">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Namespaces
+                </a>
+                <a href="#" class="nav-item" data-tab="monitor">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    Monitor
+                </a>
+                <a href="#" class="nav-item" data-tab="cli">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="4 17 10 11 4 5"/>
+                        <line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                    CLI
+                </a>
+                <a href="#" class="nav-item" data-tab="integration">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="16 18 22 12 16 6"/>
+                        <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    Integration
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <span class="quick-stat-label">Keys</span>
+                        <span class="quick-stat-value" id="quickKeys">0</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="quick-stat-label">Namespaces</span>
+                        <span class="quick-stat-value" id="quickNamespaces">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Operations Tab -->
+            <div class="tab-content active" id="operations-tab">
+                <div class="page-header">
+                    <h2>Key-Value Operations</h2>
+                    <p>Perform SET, GET, and DELETE operations with optional namespace isolation</p>
+                </div>
+
+                <div class="grid-2">
+                    <!-- Operations Panel -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Execute Command</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Namespace (optional)</label>
+                                <div class="input-with-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    <input type="text" id="namespace" placeholder="e.g., app1, dev, prod" list="namespace-list">
+                                    <datalist id="namespace-list"></datalist>
+                                </div>
+                                <small>Leave empty for default namespace</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Key *</label>
+                                <div class="input-with-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                                    </svg>
+                                    <input type="text" id="key" placeholder="user:123">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Value</label>
+                                <textarea id="value" rows="3" placeholder="Enter value (for SET operations)"></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>TTL (seconds)</label>
+                                    <input type="number" id="ttl" placeholder="3600" min="0">
+                                </div>
+                            </div>
+
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="executeSet()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                        <polyline points="17 21 17 13 7 13 7 21"/>
+                                        <polyline points="7 3 7 8 15 8"/>
+                                    </svg>
+                                    SET
+                                </button>
+                                <button class="btn btn-success" onclick="executeGet()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    GET
+                                </button>
+                                <button class="btn btn-danger" onclick="executeDelete()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                    DELETE
+                                </button>
+                                <button class="btn btn-secondary" onclick="clearForm()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                    CLEAR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Result Panel -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Response</h3>
+                            <button class="btn-icon" onclick="copyResult()" title="Copy response">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="terminal" id="result">
+                                <div class="terminal-line">
+                                    <span class="terminal-prompt">$</span>
+                                    <span class="terminal-text">Ready for operations...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Namespaces Tab -->
+            <div class="tab-content" id="namespaces-tab">
+                <div class="page-header">
+                    <h2>Namespace Management</h2>
+                    <p>Manage multi-tenant key isolation and view per-namespace statistics</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Active Namespaces</h3>
+                        <button class="btn btn-primary btn-sm" onclick="refreshNamespaces()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="namespacesList" class="namespaces-grid">
+                            <div class="loading">Loading namespaces...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitor Tab -->
+            <div class="tab-content" id="monitor-tab">
+                <div class="page-header">
+                    <h2>System Monitor</h2>
+                    <p>Real-time performance metrics and statistics</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalKeys">0</div>
+                            <div class="stat-label">Total Keys</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="cacheHits">0</div>
+                            <div class="stat-label">Cache Hits</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="cacheMisses">0</div>
+                            <div class="stat-label">Cache Misses</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon-info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="uptime">0s</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <!-- Performance Metrics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Performance</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-row">
+                                <span class="metric-label">Operations/sec</span>
+                                <span class="metric-value" id="opsPerSec">0.0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Avg Latency</span>
+                                <span class="metric-value" id="avgLatency">0.00ms</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">P95 Latency</span>
+                                <span class="metric-value" id="p95Latency">0.00ms</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">P99 Latency</span>
+                                <span class="metric-value" id="p99Latency">0.00ms</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Error Rate</span>
+                                <span class="metric-value" id="errorRate">0.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Info -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>System Info</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="metric-row">
+                                <span class="metric-label">Log Size</span>
+                                <span class="metric-value" id="logSize">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Evictions</span>
+                                <span class="metric-value" id="evictions">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Last Compaction</span>
+                                <span class="metric-value" id="lastCompaction">Never</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Hit Rate</span>
+                                <span class="metric-value" id="hitRate">0%</span>
+                            </div>
+                            <button class="btn btn-secondary btn-block" onclick="triggerCompaction()">
+                                Trigger Compaction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLI Tab -->
+            <div class="tab-content" id="cli-tab">
+                <div class="page-header">
+                    <h2>Command Line Interface</h2>
+                    <p>Execute commands using Redis-like syntax</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>CLI Terminal</h3>
+                        <button class="btn-icon" onclick="clearCLI()" title="Clear terminal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="cli-terminal" id="cliOutput">
+                            <div class="cli-line">
+                                <span class="cli-prompt">pykv></span>
+                                <span class="cli-text">Welcome to PyKV CLI</span>
+                            </div>
+                            <div class="cli-line">
+                                <span class="cli-prompt">pykv></span>
+                                <span class="cli-text">Type commands like: SET key value, GET key, DEL key</span>
+                            </div>
+                            <div class="cli-line">
+                                <span class="cli-prompt">pykv></span>
+                                <span class="cli-text">Use --ns=namespace for namespace operations</span>
+                            </div>
+                        </div>
+                        <div class="cli-input-container">
+                            <span class="cli-prompt">pykv></span>
+                            <input type="text" id="cliInput" class="cli-input" placeholder="Enter command..." autocomplete="off">
+                        </div>
+                        <div class="cli-help">
+                            <strong>Commands:</strong> SET key value [--ttl=N] [--ns=namespace] | GET key [--ns=namespace] | DEL key [--ns=namespace] | STATS [--ns=namespace] | NAMESPACES | CLEAR namespace
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integration Tab -->
+            <div class="tab-content" id="integration-tab">
+                <div class="page-header">
+                    <h2>Integration Guide</h2>
+                    <p>Learn how to use PyKV in your applications</p>
+                </div>
+
+                <!-- Quick Start -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🚀 Quick Start</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="integration-step">
+                            <strong>Step 1:</strong> PyKV is running at <code id="serverUrl">http://localhost:8000</code>
+                        </div>
+                        <div class="integration-step">
+                            <strong>Step 2:</strong> Choose your programming language below
+                        </div>
+                        <div class="integration-step">
+                            <strong>Step 3:</strong> Copy the code and start using PyKV!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Tabs -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Code Examples</h3>
+                        <div class="language-tabs">
+                            <button class="lang-tab active" onclick="switchLanguage('python')">Python</button>
+                            <button class="lang-tab" onclick="switchLanguage('javascript')">JavaScript</button>
+                            <button class="lang-tab" onclick="switchLanguage('nodejs')">Node.js</button>
+                            <button class="lang-tab" onclick="switchLanguage('curl')">cURL</button>
+                            <button class="lang-tab" onclick="switchLanguage('java')">Java</button>
+                            <button class="lang-tab" onclick="switchLanguage('php')">PHP</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Python Example -->
+                        <div class="code-example active" id="python-example">
+                            <h4>Python Integration</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('python-code')">Copy</button>
+                                <pre id="python-code"><code>import requests
+
+# Initialize
+PYKV_URL = "http://localhost:8000"
+
+# SET - Store a key-value pair
+response = requests.post(f"{PYKV_URL}/set", json={
+    "key": "user:123",
+    "value": "alice",
+    "ttl": 3600,  # Optional: expires in 1 hour
+    "namespace": "myapp"  # Optional: for isolation
+})
+print(response.json())  # {'status': 'success', 'key': 'user:123'}
+
+# GET - Retrieve a value
+response = requests.get(f"{PYKV_URL}/get/user:123?ns=myapp")
+if response.status_code == 200:
+    print(response.json()["value"])  # alice
+else:
+    print("Key not found")
+
+# DELETE - Remove a key
+response = requests.delete(f"{PYKV_URL}/delete/user:123?ns=myapp")
+print(response.json())  # {'status': 'deleted', 'key': 'user:123'}
+
+# STATS - Get statistics
+response = requests.get(f"{PYKV_URL}/stats")
+stats = response.json()
+print(f"Total keys: {stats['total_keys']}")
+print(f"Cache hits: {stats['cache_hits']}")
+
+# Use Case: Session Storage
+def store_session(session_id, user_data):
+    requests.post(f"{PYKV_URL}/set?ns=sessions", json={
+        "key": f"session:{session_id}",
+        "value": user_data,
+        "ttl": 3600  # 1 hour session
+    })
+
+def get_session(session_id):
+    response = requests.get(f"{PYKV_URL}/get/session:{session_id}?ns=sessions")
+    return response.json()["value"] if response.status_code == 200 else None</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- JavaScript Example -->
+                        <div class="code-example" id="javascript-example">
+                            <h4>JavaScript (Browser) Integration</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('javascript-code')">Copy</button>
+                                <pre id="javascript-code"><code>// Initialize
+const PYKV_URL = "http://localhost:8000";
+
+// SET - Store a key-value pair
+async function setKey() {
+    const response = await fetch(`${PYKV_URL}/set?ns=myapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            key: 'user:123',
+            value: 'alice',
+            ttl: 3600  // Optional: expires in 1 hour
+        })
+    });
+    const data = await response.json();
+    console.log(data);  // {status: 'success', key: 'user:123'}
+}
+
+// GET - Retrieve a value
+async function getKey() {
+    const response = await fetch(`${PYKV_URL}/get/user:123?ns=myapp`);
+    if (response.ok) {
+        const data = await response.json();
+        console.log(data.value);  // alice
+    } else {
+        console.log('Key not found');
+    }
+}
+
+// DELETE - Remove a key
+async function deleteKey() {
+    const response = await fetch(`${PYKV_URL}/delete/user:123?ns=myapp`, {
+        method: 'DELETE'
+    });
+    const data = await response.json();
+    console.log(data);  // {status: 'deleted', key: 'user:123'}
+}
+
+// Use Case: Cache API responses
+async function getCachedData(key) {
+    // Try cache first
+    const cached = await fetch(`${PYKV_URL}/get/${key}?ns=cache`);
+    if (cached.ok) {
+        return (await cached.json()).value;
+    }
+    
+    // Fetch from API
+    const data = await fetchFromAPI();
+    
+    // Store in cache for 5 minutes
+    await fetch(`${PYKV_URL}/set?ns=cache`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: JSON.stringify(data), ttl: 300 })
+    });
+    
+    return data;
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Node.js Example -->
+                        <div class="code-example" id="nodejs-example">
+                            <h4>Node.js Integration</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('nodejs-code')">Copy</button>
+                                <pre id="nodejs-code"><code>const axios = require('axios');
+
+// Initialize
+const PYKV_URL = "http://localhost:8000";
+
+// SET - Store a key-value pair
+async function setKey() {
+    const response = await axios.post(`${PYKV_URL}/set?ns=myapp`, {
+        key: 'user:123',
+        value: 'alice',
+        ttl: 3600  // Optional: expires in 1 hour
+    });
+    console.log(response.data);  // {status: 'success', key: 'user:123'}
+}
+
+// GET - Retrieve a value
+async function getKey() {
+    try {
+        const response = await axios.get(`${PYKV_URL}/get/user:123?ns=myapp`);
+        console.log(response.data.value);  // alice
+    } catch (error) {
+        if (error.response?.status === 404) {
+            console.log('Key not found');
+        }
+    }
+}
+
+// DELETE - Remove a key
+async function deleteKey() {
+    const response = await axios.delete(`${PYKV_URL}/delete/user:123?ns=myapp`);
+    console.log(response.data);  // {status: 'deleted', key: 'user:123'}
+}
+
+// Use Case: Express.js Rate Limiting
+const express = require('express');
+const app = express();
+
+async function rateLimiter(req, res, next) {
+    const ip = req.ip;
+    const key = `ratelimit:${ip}`;
+    
+    try {
+        const response = await axios.get(`${PYKV_URL}/get/${key}?ns=ratelimit`);
+        const count = parseInt(response.data.value) || 0;
+        
+        if (count >= 100) {
+            return res.status(429).json({ error: 'Rate limit exceeded' });
+        }
+        
+        await axios.post(`${PYKV_URL}/set?ns=ratelimit`, {
+            key, value: String(count + 1), ttl: 60
+        });
+        next();
+    } catch (error) {
+        if (error.response?.status === 404) {
+            await axios.post(`${PYKV_URL}/set?ns=ratelimit`, {
+                key, value: '1', ttl: 60
+            });
+            next();
+        }
+    }
+}
+
+app.use(rateLimiter);
+app.listen(3000);</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- cURL Example -->
+                        <div class="code-example" id="curl-example">
+                            <h4>cURL Commands</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('curl-code')">Copy</button>
+                                <pre id="curl-code"><code># SET - Store a key-value pair
+curl -X POST http://localhost:8000/set?ns=myapp \
+  -H "Content-Type: application/json" \
+  -d '{"key":"user:123","value":"alice","ttl":3600}'
+
+# GET - Retrieve a value
+curl http://localhost:8000/get/user:123?ns=myapp
+
+# DELETE - Remove a key
+curl -X DELETE http://localhost:8000/delete/user:123?ns=myapp
+
+# STATS - Get statistics
+curl http://localhost:8000/stats
+
+# List namespaces
+curl http://localhost:8000/namespaces
+
+# Clear namespace
+curl -X DELETE http://localhost:8000/namespaces/myapp
+
+# Health check
+curl http://localhost:8000/health</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Java Example -->
+                        <div class="code-example" id="java-example">
+                            <h4>Java Integration</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('java-code')">Copy</button>
+                                <pre id="java-code"><code>import java.net.http.*;
+import java.net.URI;
+import com.google.gson.Gson;
+
+public class PyKVClient {
+    private final String baseUrl = "http://localhost:8000";
+    private final HttpClient client = HttpClient.newHttpClient();
+    private final Gson gson = new Gson();
+
+    // SET - Store a key-value pair
+    public void set(String key, String value, Integer ttl, String namespace) 
+            throws Exception {
+        String url = baseUrl + "/set";
+        if (namespace != null) url += "?ns=" + namespace;
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("key", key);
+        payload.put("value", value);
+        if (ttl != null) payload.put("ttl", ttl);
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
+            .build();
+
+        client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    // GET - Retrieve a value
+    public String get(String key, String namespace) throws Exception {
+        String url = baseUrl + "/get/" + key;
+        if (namespace != null) url += "?ns=" + namespace;
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .GET()
+            .build();
+
+        HttpResponse<String> response = client.send(
+            request, HttpResponse.BodyHandlers.ofString()
+        );
+
+        if (response.statusCode() == 404) return null;
+
+        Map<String, String> data = gson.fromJson(response.body(), Map.class);
+        return data.get("value");
+    }
+
+    // Usage
+    public static void main(String[] args) throws Exception {
+        PyKVClient client = new PyKVClient();
+        client.set("user:123", "alice", 3600, "myapp");
+        String value = client.get("user:123", "myapp");
+        System.out.println(value);  // alice
+    }
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- PHP Example -->
+                        <div class="code-example" id="php-example">
+                            <h4>PHP Integration</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode('php-code')">Copy</button>
+                                <pre id="php-code"><code>&lt;?php
+// Initialize
+$PYKV_URL = "http://localhost:8000";
+
+// SET - Store a key-value pair
+function setKey($key, $value, $ttl = null, $namespace = null) {
+    global $PYKV_URL;
+    $url = $PYKV_URL . '/set';
+    if ($namespace) $url .= '?ns=' . urlencode($namespace);
+
+    $payload = ['key' => $key, 'value' => $value];
+    if ($ttl) $payload['ttl'] = $ttl;
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+// GET - Retrieve a value
+function getKey($key, $namespace = null) {
+    global $PYKV_URL;
+    $url = $PYKV_URL . '/get/' . urlencode($key);
+    if ($namespace) $url .= '?ns=' . urlencode($namespace);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode == 404) return null;
+    $data = json_decode($response, true);
+    return $data['value'];
+}
+
+// Usage
+setKey('user:123', 'alice', 3600, 'myapp');
+$value = getKey('user:123', 'myapp');
+echo $value;  // alice
+
+// Use Case: Laravel Cache
+class UserController extends Controller {
+    public function show($id) {
+        $cacheKey = "user:$id";
+        $cached = getKey($cacheKey, 'laravel_app');
+
+        if ($cached) {
+            return response()->json(json_decode($cached));
+        }
+
+        $user = User::find($id);
+        setKey($cacheKey, json_encode($user), 300, 'laravel_app');
+        return response()->json($user);
+    }
+}
+?&gt;</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Use Cases -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💡 Common Use Cases</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="use-case-grid">
+                            <div class="use-case-card">
+                                <h4>🔐 Session Storage</h4>
+                                <p>Store user sessions with automatic expiration</p>
+                                <code>SET session:abc123 user_data --ttl=3600</code>
+                            </div>
+                            <div class="use-case-card">
+                                <h4>⚡ API Caching</h4>
+                                <p>Cache API responses to reduce backend load</p>
+                                <code>SET api:users:123 response --ttl=300</code>
+                            </div>
+                            <div class="use-case-card">
+                                <h4>🚦 Rate Limiting</h4>
+                                <p>Track request counts per user/IP</p>
+                                <code>SET ratelimit:ip counter --ttl=60</code>
+                            </div>
+                            <div class="use-case-card">
+                                <h4>🏢 Multi-Tenant</h4>
+                                <p>Isolate data for different customers</p>
+                                <code>SET config:theme dark --ns=tenant_a</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Reference -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📚 API Reference</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="api-reference">
+                            <div class="api-endpoint">
+                                <span class="api-method post">POST</span>
+                                <code>/set?ns=namespace</code>
+                                <p>Store a key-value pair with optional TTL</p>
+                            </div>
+                            <div class="api-endpoint">
+                                <span class="api-method get">GET</span>
+                                <code>/get/{key}?ns=namespace</code>
+                                <p>Retrieve a value by key</p>
+                            </div>
+                            <div class="api-endpoint">
+                                <span class="api-method delete">DELETE</span>
+                                <code>/delete/{key}?ns=namespace</code>
+                                <p>Delete a key</p>
+                            </div>
+                            <div class="api-endpoint">
+                                <span class="api-method get">GET</span>
+                                <code>/namespaces</code>
+                                <p>List all active namespaces</p>
+                            </div>
+                            <div class="api-endpoint">
+                                <span class="api-method get">GET</span>
+                                <code>/stats?ns=namespace</code>
+                                <p>Get statistics (global or per-namespace)</p>
+                            </div>
+                            <div class="api-endpoint">
+                                <span class="api-method get">GET</span>
+                                <code>/health</code>
+                                <p>Health check endpoint</p>
+                            </div>
+                        </div>
+                        <a href="/docs" target="_blank" class="btn btn-primary" style="margin-top: 1rem;">
+                            View Full API Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

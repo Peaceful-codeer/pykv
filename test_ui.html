@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PyKV Test</title>
+</head>
+<body>
+    <h1>PyKV Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const result = document.getElementById('result');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/health');
+                const data = await response.json();
+                result.innerHTML = '<p style="color: green;">✓ Connected! ' + JSON.stringify(data) + '</p>';
+            } catch (error) {
+                result.innerHTML = '<p style="color: red;">✗ Connection failed: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
